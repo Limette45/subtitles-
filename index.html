@@ -3,11 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>TXT to PDF</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
-
 <body>
 
 <h2>TXT → PDF</h2>
@@ -37,16 +34,60 @@ convertButton.addEventListener("click", async () => {
 
     const text = await selectedFile.text();
 
-    // 改行をスペースに変換
-    const convertedText = text.replace(/\r?\n/g, " ");
-
     const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({
+        orientation: 'p',
+        unit: 'mm',
+        format: 'a4'
+    });
 
-    const pdf = new jsPDF();
+    // フォントサイズを12ptに変更（1ページに入る情報量を増やし、視認性も向上）
+    pdf.setFontSize(12);
 
-    const lines = pdf.splitTextToSize(convertedText, 180);
+    // 余白を考慮した印刷可能幅（A4幅210mm - 左右余白30mm = 180mm）
+    const pageWidth = 180;
+    const marginLeft = 15;
+    const marginTop = 20;
+    const marginBottom = 20;
+    
+    // A4の高さ（297mm）から上下の余白を引いた有効な高さ
+    const pageHeight = 297 - marginTop - marginBottom;
+    
+    // 1行あたりの高さ（フォントサイズ12ptの場合の目安：約5mm）
+    const lineHeight = 7;
+    const maxLinesPerPage = Math.floor(pageHeight / lineHeight);
 
-    pdf.text(lines, 15, 20);
+    // 改行コード（\r\n または \n）で分割して、元の段落や改行を保持する
+    const paragraphs = text.split(/\r?\n/);
+    let allLines = [];
+
+    paragraphs.forEach(para => {
+        if (para === "") {
+            // 空行の場合は空の文字列を追加してスペースを確保
+            allLines.push("");
+        } else {
+            // 指定した幅に収まるようにテキストを折り返す
+            const wrapped = pdf.splitTextToSize(para, pageWidth);
+            allLines.push(...wrapped);
+        }
+    });
+
+    let currentLineIndex = 0;
+    let isFirstPage = true;
+
+    while (currentLineIndex < allLines.length) {
+        if (!isFirstPage) {
+            pdf.addPage();
+        }
+
+        // 現在のページに描画する行を取得
+        const linesToPrint = allLines.slice(currentLineIndex, currentLineIndex + maxLinesPerPage);
+        
+        pdf.text(linesToPrint, marginLeft, marginTop);
+
+        currentLineIndex += maxLinesPerPage;
+        isFirstPage = false;
+    }
 
     pdf.save(
         selectedFile.name.replace(/\.txt$/i, "") + ".pdf"
