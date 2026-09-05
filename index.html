@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -64,6 +63,8 @@ convertButton.addEventListener("click", async () => {
     const { jsPDF } = window.jspdf;
 
     const pdf = new jsPDF();
+
+    // 本文を12ptに設定
     pdf.setFontSize(12);
 
     // PDFの幅・高さ
@@ -84,6 +85,7 @@ convertButton.addEventListener("click", async () => {
 
     let y = margin;
 
+    // 本文をページごとに配置
     for (const line of lines) {
 
         // ページの下端に到達したら新しいページ
@@ -97,14 +99,37 @@ convertButton.addEventListener("click", async () => {
         y += lineHeight;
     }
 
-    // 元のTXTファイル名を使ってPDFとして保存
-    const pdfName =
-        selectedFile.name.replace(/\.txt$/i, "") + ".pdf";
+    // 各ページの右上にページ番号を表示
+    const totalPages = pdf.getNumberOfPages();
 
+    for (let page = 1; page <= totalPages; page++) {
+        pdf.setPage(page);
+
+        pdf.setFontSize(10);
+
+        pdf.text(
+            `Page ${page}`,
+            pageWidth - margin,
+            margin,
+            {
+                align: "right"
+            }
+        );
+    }
+
+    // PDFの名前を月日で作成
+    // 例：9月5日 → 95.pdf
+    const today = new Date();
+
+    const month = today.getMonth() + 1;
+    const day = today.getDate();
+
+    const pdfName = `${month}${day}.pdf`;
+
+    // PDFをダウンロード
     pdf.save(pdfName);
 });
 </script>
 
 </body>
 </html>
-
