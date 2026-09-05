@@ -1,4 +1,4 @@
-```html
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -64,6 +64,7 @@ convertButton.addEventListener("click", async () => {
     const { jsPDF } = window.jspdf;
 
     const pdf = new jsPDF();
+    pdf.setFontSize(12);
 
     // PDFの幅・高さ
     const pageWidth = pdf.internal.pageSize.getWidth();
@@ -106,4 +107,4 @@ convertButton.addEventListener("click", async () => {
 
 </body>
 </html>
-```
+
