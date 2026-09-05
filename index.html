@@ -1,18 +1,41 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>TXT to PDF</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <title>TXT to PDF</title>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+
+        input,
+        button {
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        button {
+            padding: 10px 16px;
+        }
+    </style>
 </head>
+
 <body>
 
 <h2>TXT → PDF</h2>
 
 <input type="file" id="fileInput" accept=".txt">
+
+<br>
 
 <button id="convert" disabled>
     Convert to PDF
@@ -27,9 +50,7 @@ let selectedFile = null;
 fileInput.addEventListener("change", () => {
     selectedFile = fileInput.files[0];
 
-    if (selectedFile) {
-        convertButton.disabled = false;
-    }
+    convertButton.disabled = !selectedFile;
 });
 
 convertButton.addEventListener("click", async () => {
@@ -37,72 +58,52 @@ convertButton.addEventListener("click", async () => {
 
     const text = await selectedFile.text();
 
+    // 改行をスペースに変換
+    const convertedText = text.replace(/\r?\n/g, " ");
+
     const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({
-        orientation: 'p',
-        unit: 'mm',
-        format: 'a4'
-    });
 
-    // フォントサイズを12ptに設定
-    pdf.setFontSize(12);
+    const pdf = new jsPDF();
 
-    // 余白を考慮した印刷可能幅（A4幅210mm - 左右余白30mm = 180mm）
-    const pageWidth = 180;
-    const marginLeft = 15;
-    const marginTop = 20;
-    const marginBottom = 20;
-    
-    // A4の高さ（297mm）から上下の余白を引いた有効な高さ
-    const pageHeight = 297 - marginTop - marginBottom;
-    
-    // 1行あたりの高さ（フォントサイズ12ptの場合の目安）
+    // PDFの幅・高さ
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+
+    // 余白
+    const margin = 15;
+
+    // 1行の高さ
     const lineHeight = 7;
-    const maxLinesPerPage = Math.floor(pageHeight / lineHeight);
 
-    // 段落（空行）ごとに分割して、文章中の改行はスペースに置換する処理
-    // （連続する空行を区切りとして段落を保持し、段落内の改行は半角スペースに直す）
-    const paragraphs = text.split(/\r?\n\s*\r?\n/);
-    let allLines = [];
+    // PDFの幅に合わせて自動改行
+    const lines = pdf.splitTextToSize(
+        convertedText,
+        pageWidth - margin * 2
+    );
 
-    paragraphs.forEach((para, index) => {
-        // 段落内の改行を半角スペースに変換し、連続するスペースを整える
-        const cleanedPara = para.replace(/\r?\n/g, " ").replace(/\s+/g, " ").trim();
-        
-        if (cleanedPara !== "") {
-            // 指定した幅に収まるようにテキストを折り返す
-            const wrapped = pdf.splitTextToSize(cleanedPara, pageWidth);
-            allLines.push(...wrapped);
-        }
+    let y = margin;
 
-        // 段落の間に空行を挿入（最後の段落以外）
-        if (index < paragraphs.length - 1) {
-            allLines.push("");
-        }
-    });
+    for (const line of lines) {
 
-    let currentLineIndex = 0;
-    let isFirstPage = true;
-
-    while (currentLineIndex < allLines.length) {
-        if (!isFirstPage) {
+        // ページの下端に到達したら新しいページ
+        if (y + lineHeight > pageHeight - margin) {
             pdf.addPage();
+            y = margin;
         }
 
-        // 現在のページに描画する行を取得
-        const linesToPrint = allLines.slice(currentLineIndex, currentLineIndex + maxLinesPerPage);
-        
-        pdf.text(linesToPrint, marginLeft, marginTop);
+        pdf.text(line, margin, y);
 
-        currentLineIndex += maxLinesPerPage;
-        isFirstPage = false;
+        y += lineHeight;
     }
 
-    pdf.save(
-        selectedFile.name.replace(/\.txt$/i, "") + ".pdf"
-    );
+    // 元のTXTファイル名を使ってPDFとして保存
+    const pdfName =
+        selectedFile.name.replace(/\.txt$/i, "") + ".pdf";
+
+    pdf.save(pdfName);
 });
 </script>
 
 </body>
 </html>
+```
