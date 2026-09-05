@@ -48,7 +48,6 @@ let selectedFile = null;
 
 fileInput.addEventListener("change", () => {
     selectedFile = fileInput.files[0];
-
     convertButton.disabled = !selectedFile;
 });
 
@@ -64,18 +63,20 @@ convertButton.addEventListener("click", async () => {
 
     const pdf = new jsPDF();
 
-    // 本文を12ptに設定
+    // 本文 12pt
     pdf.setFontSize(12);
 
-    // PDFの幅・高さ
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
 
-    // 余白
+    // 左右の余白
     const margin = 15;
 
-    // 1行の高さ
-    const lineHeight = 7;
+    // 行間 2.0
+    const lineHeight = 12;
+
+    // ページ番号用の上部スペース
+    const topMargin = 30;
 
     // PDFの幅に合わせて自動改行
     const lines = pdf.splitTextToSize(
@@ -83,23 +84,24 @@ convertButton.addEventListener("click", async () => {
         pageWidth - margin * 2
     );
 
-    let y = margin;
+    let y = topMargin;
 
-    // 本文をページごとに配置
+    // 本文
     for (const line of lines) {
 
-        // ページの下端に到達したら新しいページ
+        // ページ下端に到達したら新しいページ
         if (y + lineHeight > pageHeight - margin) {
             pdf.addPage();
-            y = margin;
+            y = topMargin;
         }
 
+        pdf.setFontSize(12);
         pdf.text(line, margin, y);
 
         y += lineHeight;
     }
 
-    // 各ページの右上にページ番号を表示
+    // ページ番号
     const totalPages = pdf.getNumberOfPages();
 
     for (let page = 1; page <= totalPages; page++) {
@@ -110,14 +112,14 @@ convertButton.addEventListener("click", async () => {
         pdf.text(
             `Page ${page}`,
             pageWidth - margin,
-            margin,
+            15,
             {
                 align: "right"
             }
         );
     }
 
-    // PDFの名前を月日で作成
+    // 月日を詰めたファイル名
     // 例：9月5日 → 95.pdf
     const today = new Date();
 
@@ -126,7 +128,6 @@ convertButton.addEventListener("click", async () => {
 
     const pdfName = `${month}${day}.pdf`;
 
-    // PDFをダウンロード
     pdf.save(pdfName);
 });
 </script>
