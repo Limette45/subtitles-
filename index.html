@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TXT to PDF</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+
+<body>
+
+<h2>TXT → PDF</h2>
+
+<input type="file" id="fileInput" accept=".txt">
+
+<button id="convert" disabled>
+    Convert to PDF
+</button>
+
+<script>
+const fileInput = document.getElementById("fileInput");
+const convertButton = document.getElementById("convert");
+
+let selectedFile = null;
+
+fileInput.addEventListener("change", () => {
+    selectedFile = fileInput.files[0];
+
+    if (selectedFile) {
+        convertButton.disabled = false;
+    }
+});
+
+convertButton.addEventListener("click", async () => {
+    if (!selectedFile) return;
+
+    const text = await selectedFile.text();
+
+    // 改行をスペースに変換
+    const convertedText = text.replace(/\r?\n/g, " ");
+
+    const { jsPDF } = window.jspdf;
+
+    const pdf = new jsPDF();
+
+    const lines = pdf.splitTextToSize(convertedText, 180);
+
+    pdf.text(lines, 15, 20);
+
+    pdf.save(
+        selectedFile.name.replace(/\.txt$/i, "") + ".pdf"
+    );
+});
+</script>
+
+</body>
+</html>
