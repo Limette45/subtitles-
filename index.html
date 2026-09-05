@@ -57,8 +57,9 @@ convertButton.addEventListener("click", async () => {
     const text = await selectedFile.text();
 
     // 改行をスペースに変換
-    const convertedText = text.replace(/\r?\n/g, " ");
-
+    const convertedText = text
+    .replace(/\r?\n/g, " ")
+    .trim();
     const { jsPDF } = window.jspdf;
 
     const pdf = new jsPDF();
