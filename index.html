@@ -41,7 +41,7 @@ convertButton.addEventListener("click", async () => {
         format: 'a4'
     });
 
-    // フォントサイズを12ptに変更（1ページに入る情報量を増やし、視認性も向上）
+    // フォントサイズを12ptに設定
     pdf.setFontSize(12);
 
     // 余白を考慮した印刷可能幅（A4幅210mm - 左右余白30mm = 180mm）
@@ -53,22 +53,28 @@ convertButton.addEventListener("click", async () => {
     // A4の高さ（297mm）から上下の余白を引いた有効な高さ
     const pageHeight = 297 - marginTop - marginBottom;
     
-    // 1行あたりの高さ（フォントサイズ12ptの場合の目安：約5mm）
+    // 1行あたりの高さ（フォントサイズ12ptの場合の目安）
     const lineHeight = 7;
     const maxLinesPerPage = Math.floor(pageHeight / lineHeight);
 
-    // 改行コード（\r\n または \n）で分割して、元の段落や改行を保持する
-    const paragraphs = text.split(/\r?\n/);
+    // 段落（空行）ごとに分割して、文章中の改行はスペースに置換する処理
+    // （連続する空行を区切りとして段落を保持し、段落内の改行は半角スペースに直す）
+    const paragraphs = text.split(/\r?\n\s*\r?\n/);
     let allLines = [];
 
-    paragraphs.forEach(para => {
-        if (para === "") {
-            // 空行の場合は空の文字列を追加してスペースを確保
-            allLines.push("");
-        } else {
+    paragraphs.forEach((para, index) => {
+        // 段落内の改行を半角スペースに変換し、連続するスペースを整える
+        const cleanedPara = para.replace(/\r?\n/g, " ").replace(/\s+/g, " ").trim();
+        
+        if (cleanedPara !== "") {
             // 指定した幅に収まるようにテキストを折り返す
-            const wrapped = pdf.splitTextToSize(para, pageWidth);
+            const wrapped = pdf.splitTextToSize(cleanedPara, pageWidth);
             allLines.push(...wrapped);
+        }
+
+        // 段落の間に空行を挿入（最後の段落以外）
+        if (index < paragraphs.length - 1) {
+            allLines.push("");
         }
     });
 
